@@ -1,0 +1,32 @@
+server:
+  port: 8080 # Puerto interno del contenedor
+
+spring:
+  cloud:
+    gateway:
+      server:
+        webflux:
+          metrics:
+            enabled: true # Habilitamos métricas para monitoreo con Prometheus/Grafana en el futuro
+
+eureka:
+  instance:
+    # Identidad única dentro de la red de Docker
+    hostname: api-gateway
+    prefer-ip-address: true # CRÍTICO: Para que otros servicios lo vean por IP en la red interna
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      # Apunta al nombre del servicio definido en el docker-compose
+      defaultZone: ${DISCOVERY_SERVER_URL:http://discovery-server:8761/eureka/}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        # Exponemos todos en Docker para monitoreo (Prometheus/Grafana listos para el futuro)
+        include: "*"
+  endpoint:
+    gateway:
+      access: unrestricted # Permitimos acceso sin restricciones a este endpoint para facilitar el monitoreo de rutas en Docker
