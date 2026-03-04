@@ -25,3 +25,11 @@ spring:
                 - Path=/iam/** # Captura lo que venga como http://localhost:8080/iam/...
               filters:
                 - StripPrefix=1 # Elimina '/iam' de la URL antes de enviarla al microservicio
+
+scalar:
+  enabled: true
+  path: /scalar
+  sources:
+    - url: /iam/v3/api-docs
+      title: IAM Service
+  actuator-enabled: true
