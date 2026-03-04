@@ -10,14 +10,16 @@ spring:
           # Descubrimiento automático de servicios
           discovery:
             locator:
-              enabled: true # Permite que el gateway use los nombres de Eureka automáticamente
+              enabled: false # Desactivamos la detección automática de servicios para definir rutas explícitas
               lower-case-service-id: true # Convierte los IDs de servicio a minúsculas para las rutas
           # Definición de Rutas Explícitas
           routes:
             # RUTA PARA EL IAM SERVICE
+              # Nombre interno de la ruta, no tiene que coincidir con nada específico, es solo para identificación interna
             - id: iam-service-route
-              # En lugar de poner una IP fija, le pregunta a Eureka quién es `iam-service` y le envía la petición
-              # Si tienes 3 instancias de `iam-service` corriendo, Eureka balanceará la carga entre ellas
+              # En lugar de poner una IP fija, le pregunta a Eureka quién es `iam-service` y le envía la petición.
+              # Si tienes 3 instancias de `iam-service` corriendo, Eureka balanceará la carga entre ellas.
+              # El nombre "iam-service" DEBE ser exactamente el `spring.application.name` que se puso en el IAM.
               uri: lb://iam-service # 'lb://' activa el Load Balancer (balanceador de carga) de Eureka
               predicates:
                 - Path=/iam/** # Captura lo que venga como http://localhost:8080/iam/...
