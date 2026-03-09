@@ -8,6 +8,16 @@ spring:
         webflux:
           metrics:
             enabled: true # Habilitamos métricas para monitoreo con Prometheus/Grafana en el futuro
+          globalcors:
+            cors-configurations:
+              '[/**]':
+                allowedOrigins: "*"
+                allowedMethods:
+                  - GET
+                  - POST
+                  - PUT
+                  - DELETE
+                allowedHeaders: "*"
 
 eureka:
   instance:
