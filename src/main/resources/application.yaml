@@ -16,15 +16,49 @@ spring:
           routes:
             # RUTA PARA EL IAM SERVICE
               # Nombre interno de la ruta, no tiene que coincidir con nada específico, es solo para identificación interna
-            - id: iam-service-route
+              # 1. Registro y Login (Público - Específico)
+            - id: iam-auth-public
               # En lugar de poner una IP fija, le pregunta a Eureka quién es `iam-service` y le envía la petición.
               # Si tienes 3 instancias de `iam-service` corriendo, Eureka balanceará la carga entre ellas.
               # El nombre "iam-service" DEBE ser exactamente el `spring.application.name` que se puso en el IAM.
               uri: lb://iam-service # 'lb://' activa el Load Balancer (balanceador de carga) de Eureka
               predicates:
-                - Path=/iam/** # Captura lo que venga como http://localhost:8080/iam/...
+                - Path=/iam/api/v1/authentication/** # Captura lo que venga como http://localhost:8080/iam/api/v1/authentication/** y lo enruta al IAM Service
               filters:
                 - StripPrefix=1 # Elimina '/iam' de la URL antes de enviarla al microservicio
+
+              # 2. Usuarios y perfiles (Protegido - Específico)
+            - id: iam-users-protected
+              uri: lb://iam-service
+              predicates:
+                - Path=/iam/api/v1/users/**
+              filters:
+                - StripPrefix=1
+                # El nombre real del filtro es 'BearerAuthorizationRequestGatewayFilterFactory', pero en el YAML
+                # se puede usar la parte antes de 'GatewayFilterFactory' gracias a la convención de Spring Cloud Gateway
+                - BearerAuthorizationRequest # <--- Aplicamos nuestro filtro custom
+
+              # 3. Documentación y Actuator (Público - Específico)
+              # Esto permite que Scalar funcione sin abrir el microservicio entero
+            - id: iam-docs-route
+              uri: lb://iam-service
+              predicates:
+                - Path=/iam/v3/api-docs/**, /iam/actuator/**, /iam/swagger-ui/**
+              filters:
+                - StripPrefix=1
+
+            # RUTAS PARA OTROS SERVICIOS (Ejemplo)
+            # - id: catalog-service
+            #   uri: lb://catalog-service
+            #   predicates:
+            #     - Path=/catalog/**
+            #   filters:
+            #     - StripPrefix=1
+            #     - JwtAuthenticationFilter
+
+authorization:
+  jwt:
+    secret: ${JWT_SECRET}
 
 scalar:
   enabled: true
