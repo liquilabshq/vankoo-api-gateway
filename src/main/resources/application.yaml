@@ -67,3 +67,4 @@ scalar:
     - url: /iam/v3/api-docs
       title: IAM Service
   actuator-enabled: true
+  theme: deep_space
