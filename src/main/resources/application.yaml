@@ -34,7 +34,9 @@ spring:
                 - Path=/iam/api/v1/users/**
               filters:
                 - StripPrefix=1
-                - JwtAuthenticationFilter # <--- Aplicamos nuestro filtro custom
+                # El nombre real del filtro es 'BearerAuthorizationRequestGatewayFilterFactory', pero en el YAML
+                # se puede usar la parte antes de 'GatewayFilterFactory' gracias a la convención de Spring Cloud Gateway
+                - BearerAuthorizationRequest # <--- Aplicamos nuestro filtro custom
 
               # 3. Documentación y Actuator (Público - Específico)
               # Esto permite que Scalar funcione sin abrir el microservicio entero
@@ -53,6 +55,10 @@ spring:
             #   filters:
             #     - StripPrefix=1
             #     - JwtAuthenticationFilter
+
+authorization:
+  jwt:
+    secret: ${JWT_SECRET}
 
 scalar:
   enabled: true
