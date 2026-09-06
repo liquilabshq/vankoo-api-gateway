@@ -16,6 +16,11 @@ spring:
                   - POST
                   - PUT
                   - DELETE
+                  # Sin OPTIONS el navegador no pasa: antes de un POST con
+                  # Content-Type: application/json a otro origen manda una
+                  # petición de comprobación previa, y si se rechaza, el POST
+                  # real nunca se envía. Con curl no ocurre.
+                  - OPTIONS
                 allowedHeaders: "*"
 
 eureka:

@@ -7,6 +7,13 @@ spring:
     gateway:
       server:
         webflux:
+          # El iam-service también tiene su propia configuración CORS, así que la
+          # respuesta salía del gateway con Access-Control-Allow-Origin dos veces y el
+          # navegador la rechazaba: "contains multiple values '*, *'". RETAIN_UNIQUE
+          # deja una sola. Va aquí, en el perfil base, porque el problema no depende
+          # del entorno.
+          default-filters:
+            - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_UNIQUE
           # Descubrimiento automático de servicios
           discovery:
             locator:
