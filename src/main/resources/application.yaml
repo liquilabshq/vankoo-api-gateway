@@ -54,6 +54,23 @@ spring:
               filters:
                 - StripPrefix=1
 
+            # 3. Vankoo Investment Service (Protegido , Publico)
+            # 
+            - id: investment-participant-queries-protected
+              uri: lb://vankoo-investment-service
+              predicates:
+                  - Path=/investment/api/v1/auctions/mype/**, /investment/api/v1/auctions/investor/**
+              filters:
+                - StripPrefix=1
+                - JwtAuthenticationFilter
+            - id : investment-auctions-public
+              uri: lb://vankoo-investment-service
+              predicates:
+                - Path =/investment/api/v1/auctions/**
+              filters:
+                - StripPrefix=1
+
+
             # RUTAS PARA OTROS SERVICIOS (Ejemplo)
             # - id: catalog-service
             #   uri: lb://catalog-service
