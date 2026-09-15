@@ -54,6 +54,31 @@ spring:
               filters:
                 - StripPrefix=1
 
+            # RUTA PARA EL INVOICING SERVICE
+              # Protegida igual que iam-users-protected: el gateway valida el JWT y
+              # agrega X-User-Id/X-User-Email/X-User-Roles antes de reenviar. El
+              # controller de invoicing-service usa X-User-Id como MypeId.
+            - id: invoicing-service
+              uri: lb://invoicing-service
+              predicates:
+                - Path=/invoicing/api/v1/invoices/**
+              filters:
+                - StripPrefix=1
+                - BearerAuthorizationRequest
+
+              # 5. Documentación (Público - Específico)
+              # Igual que iam-docs-route: permite que el agregador de Scalar del propio
+              # gateway (ver `scalar.sources` más abajo) lea el OpenAPI de
+              # invoicing-service sin abrir el microservicio entero. invoicing-service
+              # es .NET (Scalar.AspNetCore), no Spring, así que sus rutas de docs son
+              # /openapi/** y /scalar/** — no /v3/api-docs ni /swagger-ui como IAM.
+            - id: invoicing-docs-route
+              uri: lb://invoicing-service
+              predicates:
+                - Path=/invoicing/openapi/**, /invoicing/scalar/**
+              filters:
+                - StripPrefix=1
+
             # RUTAS PARA OTROS SERVICIOS (Ejemplo)
             # - id: catalog-service
             #   uri: lb://catalog-service
@@ -73,5 +98,9 @@ scalar:
   sources:
     - url: /iam/v3/api-docs
       title: IAM Service
+    # invoicing-service es .NET (Scalar.AspNetCore): su documento OpenAPI vive en
+    # /openapi/v1.json, no en /v3/api-docs como los servicios Spring.
+    - url: /invoicing/openapi/v1.json
+      title: Invoicing Service
   actuator-enabled: true
   theme: deep_space
