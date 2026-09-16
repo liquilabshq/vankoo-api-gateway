@@ -54,6 +54,33 @@ spring:
               filters:
                 - StripPrefix=1
 
+            # RUTAS PARA EL FINANCE SERVICE
+              # 4. Billetera y depósitos del inversionista (Protegido - Específico)
+              # Mismo molde que iam-users-protected: el gateway valida el JWT, responde
+              # 401 problem+json e inyecta X-User-Id/X-User-Email/X-User-Roles.
+              # Finance todavía no lee X-User-Id (toma accountId del path); eso es una
+              # tarjeta aparte de Finance, no se resuelve aquí.
+              # El webhook de Stripe (/finance/api/v1/payment-providers/**) queda fuera
+              # a propósito: Stripe no manda JWT, detrás de este filtro fallaría
+              # siempre. En local sigue entrando directo por el 8083.
+            - id: finance-investor-protected
+              uri: lb://finance-service
+              predicates:
+                - Path=/finance/api/v1/deposits/**, /finance/api/v1/accounts/**
+              filters:
+                - StripPrefix=1
+                - BearerAuthorizationRequest
+
+              # 5. Documentación y Actuator (Público - Específico)
+              # Igual que iam-docs-route. El gateway-url del OpenAPI de Finance ya
+              # apunta a :8080/finance.
+            - id: finance-docs-route
+              uri: lb://finance-service
+              predicates:
+                - Path=/finance/v3/api-docs/**, /finance/actuator/**, /finance/swagger-ui/**
+              filters:
+                - StripPrefix=1
+
             # RUTAS PARA OTROS SERVICIOS (Ejemplo)
             # - id: catalog-service
             #   uri: lb://catalog-service
@@ -73,5 +100,7 @@ scalar:
   sources:
     - url: /iam/v3/api-docs
       title: IAM Service
+    - url: /finance/v3/api-docs
+      title: Finance Service
   actuator-enabled: true
   theme: deep_space
