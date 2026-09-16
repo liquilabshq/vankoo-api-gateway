@@ -54,6 +54,23 @@ spring:
               filters:
                 - StripPrefix=1
 
+            # 3. Vankoo Investment Service (Protegido , Publico)
+            #
+            - id: investment-participant-queries-protected
+              uri: lb://investment-service
+              predicates:
+                  - Path=/investment/api/v1/auctions/mype/**, /investment/api/v1/auctions/investor/**
+              filters:
+                - StripPrefix=1
+                - BearerAuthorizationRequest
+
+            - id : investment-auctions-public
+              uri: lb://investment-service
+              predicates:
+                - Path=/investment/api/v1/auctions/**
+              filters:
+                - StripPrefix=1
+
             # RUTAS PARA EL FINANCE SERVICE
               # 4. Billetera y depósitos del inversionista (Protegido - Específico)
               # Mismo molde que iam-users-protected: el gateway valida el JWT, responde
