@@ -1,0 +1,81 @@
+# CI/CD del API Gateway.
+#
+# - En cada PR y push a develop/main: compila, ejecuta las pruebas y publica la
+#   cobertura de JaCoCo.
+# - En push a develop (merge de un PR): además publica la imagen en el registro de
+#   Azure y la despliega en la Container App vankoo-api-gateway, con el workflow
+#   reutilizable de vankoo-infra. La Container App la crea Terraform
+#   (vankoo-infra/terraform/apps); este pipeline solo cambia su imagen.
+#
+# El despliegue entra en Azure por OIDC como la identidad vankoo-github-ci: el repo
+# tiene los secretos AZURE_CLIENT_ID, AZURE_TENANT_ID y AZURE_SUBSCRIPTION_ID y el
+# environment "development", que solo acepta despliegues desde develop.
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  # En develop un push nuevo no debe cortar un despliegue a la mitad.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/develop' }}
+
+permissions:
+  contents: read
+
+jobs:
+  build-test:
+    name: Build, test and coverage
+    runs-on: ubuntu-latest
+
+    # contextLoads arranca el gateway con el perfil dev. No necesita Eureka para
+    # arrancar; la clave JWT solo sirve dentro de este job.
+    env:
+      SPRING_PROFILES_ACTIVE: dev
+      JWT_SECRET: ci-only-jwt-secret-0123456789abcdef0123456789abcdef0123456789abcdef
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: maven
+
+      - name: Build and test
+        run: ./mvnw -B verify
+
+      - name: Coverage summary
+        if: always()
+        run: |
+          csv=target/site/jacoco/jacoco.csv
+          [ -f "$csv" ] || exit 0
+          awk -F, 'NR > 1 { missed += $8; covered += $9 }
+            END { printf "### Cobertura de líneas: %.1f %% (%d de %d)\n", 100 * covered / (missed + covered), covered, missed + covered }' \
+            "$csv" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-report
+          path: target/site/jacoco/
+          retention-days: 14
+
+  deliver:
+    name: Deliver
+    needs: [build-test]
+    # Solo lo que entra en develop llega al ambiente de desarrollo.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+    permissions:
+      contents: read
+      id-token: write # login en Azure por OIDC, sin contraseña guardada
+    uses: liquilabshq/vankoo-infra/.github/workflows/deliver-container-app.yml@develop
+    with:
+      image: api-gateway
+      container-app: vankoo-api-gateway
+    secrets: inherit
