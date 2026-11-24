@@ -155,6 +155,19 @@ spring:
                 - StripPrefix=1
                 - BearerAuthorizationRequest
 
+              # 8b. El inversionista de quien llama (Protegido - Específico)
+              # Mismo molde que profile-companies-me-protected: /investors/me/** busca al
+              # inversionista por el X-User-Id, así que la app móvil completa su KYC y
+              # sube su DNI sin poder tocar el perfil de otro. Las rutas por :id
+              # (incluidos /kyc/verify y /kyc/reject) siguen siendo de red interna.
+            - id: profile-investors-me-protected
+              uri: ${PROFILE_SERVICE_URI:lb://profile-service}
+              predicates:
+                - Path=/profile/api/v1/investors/me, /profile/api/v1/investors/me/**
+              filters:
+                - StripPrefix=1
+                - BearerAuthorizationRequest
+
             # RUTAS PARA EL RISK SERVICE
               # 9. La evaluación de riesgo de quien llama (Protegido - Específico)
               # Solo /mype/**: esa ruta busca la evaluación por el X-User-Id que inyecta
