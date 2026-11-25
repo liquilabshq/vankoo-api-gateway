@@ -44,6 +44,12 @@ management:
       exposure:
         # Exponemos todos en Docker para monitoreo (Prometheus/Grafana listos para el futuro)
         include: "*"
+  # Histograma de latencias de las peticiones: Prometheus calcula con él el p95
+  # del SLO de latencia (histogram_quantile sobre http_server_requests_seconds_bucket).
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
   endpoint:
     gateway:
       access: unrestricted # Permitimos acceso sin restricciones a este endpoint para facilitar el monitoreo de rutas en Docker
